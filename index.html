@@ -218,33 +218,33 @@ btn.classList.add("selected");
 }
 
 function submitAnswer(){
-  var c = cases[current];
-  var f = document.getElementById("feedback");
+var c = cases[current];
+var f = document.getElementById("feedback");
 
-  if(!selected){
-    f.className = "feedback incorrect";
-    f.innerHTML = "Choose an investigation result before submitting.";
-    return;
-  }
-
-  if(selected === c.answer){
-    score++;
-    f.className = "feedback correct";
-    f.innerHTML = "✅ Correct investigation.<br><br><button onclick='nextCase()'>Next Case</button>";
-  } else {
-    f.className = "feedback incorrect";
-    f.innerHTML = "🔎 Not quite. Look carefully at the construction marks and try again.";
-  }
+if(!selected){
+f.className = "feedback incorrect";
+f.innerHTML = "Choose an investigation result before submitting.";
+return;
 }
 
+if(selected === c.answer){
+score++;
+f.className = "feedback correct";
+f.innerHTML = "✅ Correct investigation.";
+setTimeout(nextCase,900);
+}else{
+f.className = "feedback incorrect";
+f.innerHTML = "🔎 Not quite. Look carefully at the construction marks and which points determine the final result.";
+}
+}
 
 function nextCase(){
-  current++;
-  if(current >= cases.length){
-    finish();
-  } else {
-    loadCase();
-  }
+current++;
+if(current >= cases.length){
+finish();
+}else{
+loadCase();
+}
 }
 
 function finish(){
