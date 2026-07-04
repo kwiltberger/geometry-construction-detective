@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construction Detective</title>
+<style>
+:root{
+--navy:#0f2d44;--blue:#2f80a8;--green:#3ca65c;--yellow:#f2b705;--red:#c0392b;--purple:#9c64a6;
+--ltblue:#f0f7fb;--ltgreen:#eefaf1;--ltyellow:#fff8e6;--ltred:#fdecea;--gray:#d6e6ef;--text:#1f2933;
+}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:var(--ltblue);color:var(--text);margin:0;padding:20px;line-height:1.5}
+.container{max-width:1050px;margin:0 auto}
+.hero{background:var(--navy);color:white;padding:24px;border-radius:12px;text-align:center}
+.card{background:white;border-left:6px solid var(--blue);padding:18px;border-radius:10px;margin-top:18px}
+.yellow{background:var(--ltyellow);border-left-color:var(--yellow)}
+.green{background:var(--ltgreen);border-left-color:var(--green)}
+.red{background:var(--ltred);border-left-color:var(--red)}
+button{background:var(--navy);color:white;border:0;border-radius:8px;padding:11px 16px;margin:6px;cursor:pointer;font-size:15px}
+button:hover{background:#163d5c}
+button.choice{display:block;width:100%;text-align:left;background:#f6f9fb;color:#1f2933;border:1px solid var(--gray);margin:8px 0}
+button.choice:hover{background:#eaf3f8}
+button.choice.selected{background:#fff8e6;border:2px solid var(--yellow)}
+.diagram{background:white;border:1px solid var(--gray);border-radius:10px;text-align:center;padding:12px;overflow:auto}
+svg{max-width:100%;height:auto}
+.feedback{display:none;padding:14px;border-radius:8px;margin-top:12px;font-weight:bold}
+.correct{display:block;background:var(--ltgreen);border-left:6px solid var(--green);color:#1f6b35}
+.incorrect{display:block;background:var(--ltred);border-left:6px solid var(--red);color:#8a1f11}
+.hidden{display:none}
+.progress{height:18px;background:#d6e6ef;border-radius:999px;overflow:hidden;margin-top:12px}
+.bar{height:100%;background:var(--green);width:0%;transition:.3s}
+.badge{display:inline-block;background:#fff8e6;border:2px solid var(--yellow);border-radius:999px;padding:8px 14px;font-weight:bold;color:var(--navy)}
+.code{display:inline-block;background:var(--navy);color:white;padding:12px 18px;border-radius:8px;font-size:22px;font-weight:bold}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<section id="start">
+<div class="hero">
+<h1>🕵️ Geometry Construction Detective</h1>
+<p>Unit 2 Week 5 Self-Check & Extra Practice</p>
+</div>
+
+<div class="card">
+<h2 style="color:#0f2d44;margin-top:0;">Your Mission</h2>
+<p>Inspect each digital construction. Decide whether the construction is correct or identify the mistake.</p>
+<p>You will see <strong>10 randomized cases</strong>. Some constructions are correct. Some contain exactly one error.</p>
+<button onclick="startGame()">Begin Investigation</button>
+</div>
+
+<div class="card yellow">
+<h3 style="color:#0f2d44;margin-top:0;">Detective Reminders</h3>
+<p>Look for wrong radii, wrong intersections, incorrect copied angles, missing construction points, and final lines that do not pass through the correct points.</p>
+</div>
+</section>
+
+<section id="game" class="hidden">
+<div class="hero">
+<h1 id="caseTitle">Case</h1>
+<p id="caseSubtitle"></p>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<p id="scoreText"></p>
+</div>
+
+<div class="card">
+<h2 style="color:#0f2d44;margin-top:0;">Construction Evidence</h2>
+<div class="diagram" id="diagram"></div>
+</div>
+
+<div class="card">
+<h2 style="color:#0f2d44;margin-top:0;">What did you find?</h2>
+<div id="choices"></div>
+<button onclick="submitAnswer()">Submit Investigation</button>
+<div id="feedback" class="feedback"></div>
+</div>
+</section>
+
+<section id="finish" class="hidden">
+<div class="hero">
+<h1>🏆 Investigation Complete</h1>
+<p>You finished Construction Detective.</p>
+</div>
+<div class="card green" style="text-align:center;">
+<h2 style="color:#0f2d44;">Final Score</h2>
+<p id="finalScore"></p>
+<p>Completion Code:</p>
+<p class="code">U2W5-CONSTRUCT</p>
+<button onclick="location.reload()">Restart</button>
+</div>
+</section>
+
+</div>
+
+<script>
+var allCases = [
+{
+title:"Case 1: Congruent Segment",
+subtitle:"The radius should copy AB onto ray CD.",
+type:"segmentCorrect",
+answer:"No mistake",
+choices:["Wrong radius","Wrong intersection point","Wrong endpoint labeled","No mistake"]
+},
+{
+title:"Case 2: Congruent Segment",
+subtitle:"Inspect the copied segment.",
+type:"segmentWrong",
+answer:"Wrong radius",
+choices:["Wrong radius","Wrong chord length","Wrong final ray","No mistake"]
+},
+{
+title:"Case 3: Congruent Angle",
+subtitle:"The copied angle should preserve the radius and chord length.",
+type:"angleCorrect",
+answer:"No mistake",
+choices:["Wrong chord length","Construction circles have different radii","Final ray starts at the wrong point","No mistake"]
+},
+{
+title:"Case 4: Congruent Angle",
+subtitle:"Inspect the chord transfer.",
+type:"angleWrong",
+answer:"Wrong chord length",
+choices:["Wrong chord length","Wrong endpoint labeled","Missing original angle","No mistake"]
+},
+{
+title:"Case 5: Angle Bisector",
+subtitle:"The equal-radius arcs should meet at the bisector point.",
+type:"bisectorCorrect",
+answer:"No mistake",
+choices:["Equal-radius arcs are incorrect","Final ray misses the intersection point","Wrong vertex used","No mistake"]
+},
+{
+title:"Case 6: Angle Bisector",
+subtitle:"Inspect the final bisector ray.",
+type:"bisectorWrong",
+answer:"Final ray misses the intersection point",
+choices:["Final ray misses the intersection point","Wrong chord copied","Wrong radius for copied segment","No mistake"]
+},
+{
+title:"Case 7: Perpendicular Bisector",
+subtitle:"The final line should pass through both arc intersections.",
+type:"perpBisectorCorrect",
+answer:"No mistake",
+choices:["Line does not pass through both intersections","Circles have different radii","Line is not perpendicular","No mistake"]
+},
+{
+title:"Case 8: Perpendicular Bisector",
+subtitle:"Inspect the final construction line.",
+type:"perpBisectorWrong",
+answer:"Line does not pass through both intersections",
+choices:["Line does not pass through both intersections","Wrong copied angle","Wrong final endpoint","No mistake"]
+},
+{
+title:"Case 9: Parallel Line",
+subtitle:"The copied angle should create a parallel line.",
+type:"parallelCorrect",
+answer:"No mistake",
+choices:["Copied angle is incorrect","Line intersects the original line","Wrong construction point","No mistake"]
+},
+{
+title:"Case 10: Parallel Line",
+subtitle:"Inspect the copied angle and final line.",
+type:"parallelWrong",
+answer:"Line intersects the original line",
+choices:["Line intersects the original line","Wrong radius","Wrong midpoint","No mistake"]
+}
+];
+
+var cases = [];
+var current = 0;
+var score = 0;
+var selected = "";
+
+function startGame(){
+cases = shuffle(allCases).slice(0,10);
+document.getElementById("start").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+loadCase();
+}
+
+function shuffle(arr){
+var a = arr.slice();
+for(var i=a.length-1;i>0;i--){
+var j=Math.floor(Math.random()*(i+1));
+var t=a[i];a[i]=a[j];a[j]=t;
+}
+return a;
+}
+
+function loadCase(){
+selected = "";
+var c = cases[current];
+document.getElementById("caseTitle").textContent = c.title;
+document.getElementById("caseSubtitle").textContent = c.subtitle;
+document.getElementById("scoreText").textContent = "Case " + (current+1) + " of " + cases.length + " | Score: " + score;
+document.getElementById("bar").style.width = ((current)/cases.length*100) + "%";
+document.getElementById("diagram").innerHTML = makeDiagram(c.type);
+
+var html = "";
+for(var i=0;i<c.choices.length;i++){
+html += "<button class='choice' onclick='selectChoice(this)'>" + c.choices[i] + "</button>";
+}
+document.getElementById("choices").innerHTML = html;
+
+var f = document.getElementById("feedback");
+f.className = "feedback";
+f.style.display = "none";
+f.innerHTML = "";
+}
+
+function selectChoice(btn){
+selected = btn.textContent;
+var buttons = document.querySelectorAll(".choice");
+for(var i=0;i<buttons.length;i++){buttons[i].classList.remove("selected");}
+btn.classList.add("selected");
+}
+
+function submitAnswer(){
+var c = cases[current];
+var f = document.getElementById("feedback");
+
+if(!selected){
+f.className = "feedback incorrect";
+f.innerHTML = "Choose an investigation result before submitting.";
+return;
+}
+
+if(selected === c.answer){
+score++;
+f.className = "feedback correct";
+f.innerHTML = "✅ Correct investigation.";
+setTimeout(nextCase,900);
+}else{
+f.className = "feedback incorrect";
+f.innerHTML = "🔎 Not quite. Look carefully at the construction marks and which points determine the final result.";
+}
+}
+
+function nextCase(){
+current++;
+if(current >= cases.length){
+finish();
+}else{
+loadCase();
+}
+}
+
+function finish(){
+document.getElementById("game").classList.add("hidden");
+document.getElementById("finish").classList.remove("hidden");
+document.getElementById("finalScore").innerHTML = "You scored <strong>" + score + " out of " + cases.length + "</strong>.";
+}
+
+function makeDiagram(type){
+if(type==="segmentCorrect") return segmentDiagram(false);
+if(type==="segmentWrong") return segmentDiagram(true);
+if(type==="angleCorrect") return angleDiagram(false);
+if(type==="angleWrong") return angleDiagram(true);
+if(type==="bisectorCorrect") return bisectorDiagram(false);
+if(type==="bisectorWrong") return bisectorDiagram(true);
+if(type==="perpBisectorCorrect") return perpBisectorDiagram(false);
+if(type==="perpBisectorWrong") return perpBisectorDiagram(true);
+if(type==="parallelCorrect") return parallelDiagram(false);
+if(type==="parallelWrong") return parallelDiagram(true);
+}
+
+function point(x,y,label){
+return "<circle cx='"+x+"' cy='"+y+"' r='6' fill='#2f80a8'/><text x='"+(x+8)+"' y='"+(y-8)+"' font-size='18' font-weight='bold'>"+label+"</text>";
+}
+
+function segmentDiagram(wrong){
+var d = wrong ? 360 : 315;
+return "<svg width='720' height='320' viewBox='0 0 720 320'>" +
+"<rect width='720' height='320' fill='white'/>" +
+"<text x='40' y='40' font-size='22' font-weight='bold' fill='#0f2d44'>Copy segment AB onto ray CD</text>" +
+"<line x1='80' y1='100' x2='210' y2='100' stroke='#111' stroke-width='4'/>" +
+point(80,100,"A")+point(210,100,"B")+
+"<line x1='80' y1='220' x2='430' y2='220' stroke='#111' stroke-width='4'/><polygon points='430,220 410,210 410,230' fill='#111'/>" +
+point(80,220,"C")+
+"<circle cx='80' cy='220' r='"+(d-80)+"' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+point(d,220,"D")+
+"<line x1='80' y1='220' x2='"+d+"' y2='220' stroke='#3ca65c' stroke-width='5'/>" +
+"<text x='500' y='150' font-size='20' fill='#0f2d44'>Check: CD should match AB.</text>" +
+"</svg>";
+}
+
+function angleDiagram(wrong){
+var hx = wrong ? 430 : 400;
+var hy = wrong ? 205 : 165;
+return "<svg width='720' height='360' viewBox='0 0 720 360'>" +
+"<rect width='720' height='360' fill='white'/>" +
+"<text x='40' y='40' font-size='22' font-weight='bold' fill='#0f2d44'>Copy angle BAC</text>" +
+"<line x1='110' y1='170' x2='230' y2='90' stroke='#111' stroke-width='4'/>" +
+"<line x1='110' y1='170' x2='250' y2='210' stroke='#111' stroke-width='4'/>" +
+point(110,170,"A")+point(230,90,"B")+point(250,210,"C")+
+"<circle cx='110' cy='170' r='85' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+"<line x1='174' y1='114' x2='192' y2='195' stroke='#9c64a6' stroke-width='4' stroke-dasharray='8 6'/>" +
+"<text x='185' y='155' font-size='18' fill='#9c64a6'>chord</text>" +
+"<line x1='370' y1='240' x2='540' y2='240' stroke='#111' stroke-width='4'/>" +
+point(370,240,"F")+point(455,240,"G")+
+"<circle cx='370' cy='240' r='85' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+"<circle cx='455' cy='240' r='85' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+point(hx,hy,"H")+
+"<line x1='370' y1='240' x2='"+hx+"' y2='"+hy+"' stroke='#3ca65c' stroke-width='5'/>" +
+"<text x='470' y='90' font-size='20' fill='#0f2d44'>Check: copied chord places H.</text>" +
+"</svg>";
+}
+
+function bisectorDiagram(wrong){
+var fx = 300, fy = 150;
+var endx = wrong ? 370 : 300;
+var endy = wrong ? 120 : 150;
+return "<svg width='720' height='360' viewBox='0 0 720 360'>" +
+"<rect width='720' height='360' fill='white'/>" +
+"<text x='40' y='40' font-size='22' font-weight='bold' fill='#0f2d44'>Construct an angle bisector</text>" +
+"<line x1='180' y1='260' x2='390' y2='100' stroke='#111' stroke-width='4'/>" +
+"<line x1='180' y1='260' x2='430' y2='260' stroke='#111' stroke-width='4'/>" +
+point(180,260,"B")+point(390,100,"A")+point(430,260,"C")+
+"<circle cx='180' cy='260' r='120' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+point(276,188,"D")+point(300,260,"E")+
+"<circle cx='276' cy='188' r='95' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+"<circle cx='300' cy='260' r='95' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+point(fx,fy,"F")+
+"<line x1='180' y1='260' x2='"+endx+"' y2='"+endy+"' stroke='#3ca65c' stroke-width='5'/>" +
+"<text x='455' y='170' font-size='20' fill='#0f2d44'>Check: ray BF should pass through F.</text>" +
+"</svg>";
+}
+
+function perpBisectorDiagram(wrong){
+var x2 = wrong ? 365 : 300;
+return "<svg width='720' height='340' viewBox='0 0 720 340'>" +
+"<rect width='720' height='340' fill='white'/>" +
+"<text x='40' y='40' font-size='22' font-weight='bold' fill='#0f2d44'>Construct a perpendicular bisector</text>" +
+"<line x1='160' y1='190' x2='440' y2='190' stroke='#111' stroke-width='4'/>" +
+point(160,190,"A")+point(440,190,"B")+
+"<circle cx='160' cy='190' r='190' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+"<circle cx='440' cy='190' r='190' fill='none' stroke='#999' stroke-width='3' stroke-dasharray='8 6'/>" +
+point(300,62,"C")+point(300,318,"D")+
+"<line x1='"+x2+"' y1='50' x2='"+x2+"' y2='320' stroke='#3ca65c' stroke-width='5'/>" +
+"<text x='500' y='150' font-size='20' fill='#0f2d44'>Check: line should pass through both intersections.</text>" +
+"</svg>";
+}
+
+function parallelDiagram(wrong){
+var y2 = wrong ? 225 : 140;
+return "<svg width='720' height='330' viewBox='0 0 720 330'>" +
+"<rect width='720' height='330' fill='white'/>" +
+"<text x='40' y='40' font-size='22' font-weight='bold' fill='#0f2d44'>Construct a parallel line</text>" +
+"<line x1='90' y1='230' x2='570' y2='230' stroke='#111' stroke-width='4'/>" +
+"<line x1='140' y1='280' x2='300' y2='120' stroke='#111' stroke-width='4'/>" +
+point(250,170,"P")+
+"<path d='M250 170 L310 170 L292 188' fill='none' stroke='#3ca65c' stroke-width='4'/>" +
+"<line x1='90' y1='"+y2+"' x2='570' y2='"+y2+"' stroke='#3ca65c' stroke-width='5'/>" +
+"<text x='430' y='120' font-size='20' fill='#0f2d44'>Check: final line should not intersect the original.</text>" +
+"</svg>";
+}
+</script>
+</body>
+</html>
